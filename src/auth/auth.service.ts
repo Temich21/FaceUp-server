@@ -1,20 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { hash, compare } from 'bcrypt'
 import { TokenService } from 'src/auth/token/token.service';
-import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CredentialsDto } from './dto/credentials.dto';
+import { UserRepository } from './user.repository';
 
-interface UserResponse {
+type UserResponse = {
     id: string
     name: string
     email: string
     age: number
 }
 
-interface AuthUser {
+type AuthUser = {
     accessToken: string
     refreshToken: string
     user: UserResponse
@@ -24,18 +23,18 @@ interface AuthUser {
 export class AuthService {
     constructor(
         private tokenService: TokenService,
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
+        private userRepository: UserRepository,
     ) { }
 
     async signup({ name, email, age, password }: CreateUserDto): Promise<AuthUser> {
-        const candidate = await this.userRepository.findOne({ where: { email } })
+        const candidate = await this.userRepository.findOne(email)
         if (candidate) {
             throw new Error(`User with this email ${email} already exist`)
         }
 
         const hashPassword = await hash(password, 3)
-        const user = await this.userRepository.save(new User(name, email, age, hashPassword))
+
+        const user = await this.userRepository.saveUser(new User(name, email, age, hashPassword))
 
         const tokens = this.tokenService.generateTokens({ ...user })
 
@@ -43,7 +42,7 @@ export class AuthService {
     }
 
     async signin({ email, password }: CredentialsDto): Promise<AuthUser> {
-        const user = await this.userRepository.findOne({ where: { email } })
+        const user = await this.userRepository.findOne(email)
         if (!user) {
             throw new Error("User with this email doesn't exist")
         }

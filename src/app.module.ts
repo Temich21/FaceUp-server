@@ -6,6 +6,8 @@ import { User } from './auth/user.entity';
 import { TokenModule } from './auth/token/token.module';
 import { Record } from './record/record.entity';
 import { RecordModule } from './record/record.module';
+import { FileModule } from './file/file.module';
+import { File } from './file/file.entity';
 
 @Module({
   imports: [
@@ -15,7 +17,7 @@ import { RecordModule } from './record/record.module';
       port: 5432,
       password: '12345',
       username: 'postgres',
-      entities: [User, Record],
+      entities: [User, Record, File],
       database: 'postgres',
       synchronize: true,
       schema: 'faceup'
@@ -23,6 +25,7 @@ import { RecordModule } from './record/record.module';
     AuthModule,
     TokenModule,
     RecordModule,
+    FileModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

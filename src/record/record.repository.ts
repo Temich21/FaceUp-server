@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Record } from './record.entity';
 import { RecordDto } from './dto/record.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,14 +11,15 @@ export class RecordRepository {
     private readonly recordRepository: Repository<Record>,
   ) { }
 
-  async create(RecordDto: RecordDto): Promise<Record> {
+  async create(recordDto: RecordDto): Promise<Record> {
     const newRecord = this.recordRepository.create({
-      user: { id: RecordDto.userId },
-      title: RecordDto.title,
-      details: RecordDto.details,
-      category: RecordDto.category
-    });
-    return await this.recordRepository.save(newRecord);
+      user: { id: recordDto.userId },
+      title: recordDto.title,
+      details: recordDto.details,
+      category: recordDto.category
+    })
+
+    return await this.recordRepository.save(newRecord)
   }
 
   async update(RecordDto: RecordDto): Promise<void> {
@@ -29,9 +30,9 @@ export class RecordRepository {
   }
 
   async remove(id: string): Promise<void> {
-    const deleteResult = await this.recordRepository.delete(id);
+    const deleteResult = await this.recordRepository.delete(id)
     if (deleteResult.affected === 0) {
-      throw new NotFoundException(`Cannot find Record with id ${id}`);
+      throw new NotFoundException(`Cannot find Record with id ${id}`)
     }
   }
 
@@ -39,23 +40,21 @@ export class RecordRepository {
     return await this.recordRepository.find({
       where: { user: { id: userId } },
       relations: ['user'],
-    });
+    })
   }
 
-  // async findOne(id: string): Promise<Record> {
-  //   const Record = await this.recordRepository.createQueryBuilder('Record')
-  //     .leftJoinAndSelect('Record.columns', 'columns')
-  //     .leftJoinAndSelect('columns.cards', 'cards')
-  //     .where('Record.id = :id', { id })
-  //     .orderBy('Record.rank', 'ASC')
-  //     .addOrderBy('columns.rank', 'ASC')
-  //     .addOrderBy('cards.rank', 'ASC')
-  //     .getOne();
+  async findOne(id: string): Promise<Record> {
+    const record = await this.recordRepository.createQueryBuilder('record')
+      .select(['record.id', 'record.title', 'record.details', 'record.category', 'record.userId'])
+      .leftJoin('record.files', 'files')
+      .addSelect(['files.id', 'files.filename'])
+      .where('record.id = :id', { id })
+      .getOne()
 
-  //   if (Record == null) {
-  //     throw new NotFoundException(`Cannot find Record with id ${id}`)
-  //   }
+    if (record == null) {
+      throw new NotFoundException(`Cannot find Record with id ${id}`);
+    }
 
-  //   return Record
-  // }
+    return record
+  }
 }

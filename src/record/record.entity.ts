@@ -1,5 +1,6 @@
-import { Column as ColumnORM, Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
+import { User } from 'src/auth/user.entity';
+import { File } from 'src/file/file.entity';
 
 export enum Category {
     BULLYING = "Bullying, bad behaviour",
@@ -13,18 +14,18 @@ export class Record {
     @PrimaryGeneratedColumn('uuid')
     id: string
 
-    @ColumnORM({ type: 'varchar' })
+    @Column({ type: 'varchar' })
     title: string
 
-    @ColumnORM({ type: 'varchar' })
+    @Column({ type: 'varchar' })
     details: string
 
-    @ColumnORM({ type: 'enum', enum: Category })
+    @Column({ type: 'enum', enum: Category })
     category: Category
 
     @ManyToOne(() => User, user => user.records, { onDelete: 'CASCADE' })
     user: User
 
-    // @OneToMany(() => Column, column => column.board)
-    // columns: Column[]
+    @OneToMany(() => File, file => file.record)
+    files: File[]
 }
