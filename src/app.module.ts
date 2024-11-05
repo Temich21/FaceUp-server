@@ -33,12 +33,6 @@ import { File } from './file/file.entity';
   ],
   controllers: [],
   providers: [
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: AccessJwtAuthGuard,
-    // },
-    // JwtService,
-    // ConfigService,
   ],
 })
 export class AppModule { }
