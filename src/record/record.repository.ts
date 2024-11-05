@@ -1,50 +1,49 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, EntityRepository, Repository } from 'typeorm';
 import { Record } from './record.entity';
 import { RecordDto } from './dto/record.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
-export class RecordRepository {
-  constructor(
-    @InjectRepository(Record)
-    private readonly recordRepository: Repository<Record>,
-  ) { }
+export class RecordRepository extends Repository<Record> {
+  constructor(private dataSource: DataSource) {
+    super(Record, dataSource.createEntityManager())
+  }
 
-  async create(recordDto: RecordDto): Promise<Record> {
-    const newRecord = this.recordRepository.create({
+  async createRecord(recordDto: RecordDto): Promise<Record> {
+    const newRecord = this.create({
       user: { id: recordDto.userId },
       title: recordDto.title,
       details: recordDto.details,
       category: recordDto.category
     })
 
-    return await this.recordRepository.save(newRecord)
+    return await this.save(newRecord)
   }
 
-  async update(RecordDto: RecordDto): Promise<void> {
-    const updateResult = await this.recordRepository.update(RecordDto.id, RecordDto);
+  async updateRecord(RecordDto: RecordDto): Promise<void> {
+    const updateResult = await this.update(RecordDto.id, RecordDto);
     if (updateResult.affected === 0) {
       throw new NotFoundException(`Cannot find Record with id ${RecordDto.id}`);
     }
   }
 
-  async remove(id: string): Promise<void> {
-    const deleteResult = await this.recordRepository.delete(id)
+  async removeRecord(id: string): Promise<void> {
+    const deleteResult = await this.delete(id)
     if (deleteResult.affected === 0) {
       throw new NotFoundException(`Cannot find Record with id ${id}`)
     }
   }
 
   async findAll(userId: string): Promise<Record[]> {
-    return await this.recordRepository.find({
+    return await this.find({
       where: { user: { id: userId } },
       relations: ['user'],
     })
   }
 
-  async findOne(id: string): Promise<Record> {
-    const record = await this.recordRepository.createQueryBuilder('record')
+  async findOneRecord(id: string): Promise<Record> {
+    const record = await this.createQueryBuilder('record')
       .select(['record.id', 'record.title', 'record.details', 'record.category', 'record.userId'])
       .leftJoin('record.files', 'files')
       .addSelect(['files.id', 'files.filename'])

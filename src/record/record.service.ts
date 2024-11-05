@@ -1,43 +1,57 @@
 import { Injectable } from '@nestjs/common';
 import { RecordRepository } from 'src/record/record.repository';
+import { DataSource, EntityManager } from 'typeorm';
 import { RecordDto } from 'src/record/dto/record.dto';
 import { Record } from 'src/record/record.entity';
-import { FileRepository } from 'src/file/file.repository';
+import { File } from 'src/file/file.entity';
 
 @Injectable()
 export class RecordService {
   constructor(
     private readonly recordRepository: RecordRepository,
-    private readonly fileRepository: FileRepository
+    private readonly dataSource: DataSource
   ) { }
 
   async create(recordDto: RecordDto, files: Express.Multer.File[]): Promise<Record> {
-    //Add transaction
-    const record = await this.recordRepository.create(recordDto)
+    return await this.dataSource.transaction(async (manager: EntityManager) => {
+      const transactionalRecordRepository = manager.getRepository(Record)
+      const transactionalFileRepository = manager.getRepository(File)
 
-    const fileEntities = files.map(file => {
-      return this.fileRepository.createFile(file, record.id);
+      const savedRecord = await transactionalRecordRepository.save({
+        id: recordDto.id,
+        user: { id: recordDto.userId },
+        title: recordDto.title,
+        details: recordDto.details,
+        category: recordDto.category,
+      });
+
+      const fileEntities = files.map(file => {
+        return transactionalFileRepository.create({
+          record: { id: savedRecord.id },
+          filename: file.originalname,
+          data: file.buffer,
+        });
+      })
+
+      await transactionalFileRepository.save(fileEntities)
+
+      return savedRecord;
     })
-
-    await this.fileRepository.saveFiles(fileEntities)
-
-    return record
   }
 
   async findAll(userId: string): Promise<Record[]> {
-    //index на userId в ДБ в рекордах
     return await this.recordRepository.findAll(userId)
   }
 
   async findOne(id: string): Promise<Record> {
-    return await this.recordRepository.findOne(id)
+    return await this.recordRepository.findOneRecord(id)
   }
 
   async update(RecordDto: RecordDto): Promise<void> {
-    await this.recordRepository.update(RecordDto)
+    await this.recordRepository.updateRecord(RecordDto)
   }
 
   async remove(id: string): Promise<void> {
-    await this.recordRepository.remove(id)
+    await this.recordRepository.removeRecord(id)
   }
 }

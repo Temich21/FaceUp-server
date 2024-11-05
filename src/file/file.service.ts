@@ -1,5 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable } from '@nestjs/common';
 import { FileRepository } from 'src/file/file.repository';
 
 import { File } from './file.entity';
@@ -16,7 +15,7 @@ export class FileService {
   ) { }
 
   async getFile(fileId: string): Promise<File> {
-    return this.fileRepository.findOne(fileId)
+    return this.fileRepository.findOneFile(fileId)
   }
 
   async uploadFile(file: Express.Multer.File, recordId: string): Promise<UploadedFileResponse> {
@@ -26,7 +25,7 @@ export class FileService {
   }
 
   async removeFile(fileId: string): Promise<string> {
-    await this.fileRepository.remove(fileId)
+    await this.fileRepository.removeFile(fileId)
     return fileId
   }
 }

@@ -1,17 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { File } from './file.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
-export class FileRepository {
-  constructor(
-    @InjectRepository(File)
-    private readonly fileRepository: Repository<File>,
-  ) { }
+export class FileRepository extends Repository<File> {
+  constructor(private dataSource: DataSource) {
+    super(File, dataSource.createEntityManager());
+  }
 
   createFile(file: Express.Multer.File, recordId: string): File {
-    return this.fileRepository.create({
+    return this.create({
       record: { id: recordId },
       filename: file.originalname,
       data: file.buffer,
@@ -19,15 +17,15 @@ export class FileRepository {
   }
 
   async saveFiles(newFiles: File[]): Promise<File[]> {
-    return await this.fileRepository.save(newFiles);
+    return await this.save(newFiles);
   }
 
   async saveFile(newFiles: File): Promise<File> {
-    return await this.fileRepository.save(newFiles);
+    return await this.save(newFiles);
   }
 
-  async findOne(id: string): Promise<File> {
-    const file = await this.fileRepository.findOne({ where: { id } })
+  async findOneFile(id: string): Promise<File> {
+    const file = await this.findOne({ where: { id } })
 
     if (file == null) {
       throw new NotFoundException(`Cannot find File`);
@@ -35,8 +33,8 @@ export class FileRepository {
     return file
   }
 
-  async remove(id: string): Promise<void> {
-    const deleteResult = await this.fileRepository.delete(id);
+  async removeFile(id: string): Promise<void> {
+    const deleteResult = await this.delete(id);
     if (deleteResult.affected === 0) {
       throw new NotFoundException(`Cannot find File with id ${id}`);
     }
