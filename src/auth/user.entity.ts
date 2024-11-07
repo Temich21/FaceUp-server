@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany, Index } from 'typeorm';
 import { Record } from 'src/record/record.entity';
 
 @Entity()
@@ -9,13 +9,14 @@ export class User {
     @Column({ type: 'varchar' })
     name: string
 
-    @Column({ type: 'varchar' })
-    email: string
+    @Column({ type: 'varchar', unique: true })
+    @Index()
+    email: string;
 
     @Column({ type: 'smallint' })
     age: number
 
-    @Column({ type: 'text' })
+    @Column({ type: 'varchar' })
     password: string
 
     @OneToMany(() => Record, record => record.user)
